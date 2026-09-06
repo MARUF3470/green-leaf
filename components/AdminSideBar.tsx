@@ -1,4 +1,3 @@
-import React from "react";
 import {
   Sidebar,
   SidebarHeader,
@@ -7,27 +6,19 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
 import {
-  BellRing,
   ChartNoAxesColumn,
   Check,
-  ChevronDown,
-  DollarSign,
+  Handshake,
   IdCardLanyard,
-  LayoutDashboard,
-  Receipt,
 } from "lucide-react";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "./ui/dropdown-menu";
+
 import Link from "next/link";
-const EmployeeSideBar = () => {
+
+const AdminSideBar = () => {
   return (
     <Sidebar>
       <SidebarHeader>
-        <h1>Employee Name</h1>
+        <h1>Admin Name</h1>
         <SidebarMenu>
           <SidebarMenuItem>
             {/* <DropdownMenu>
@@ -45,33 +36,17 @@ const EmployeeSideBar = () => {
             <SidebarMenuButton>
               <Link
                 className="flex justify-center items-center gap-1"
-                href="/employee/mytasks"
+                href="/admin"
               >
-                <Check /> My Task
+                <Handshake /> Businesses
               </Link>
             </SidebarMenuButton>
             <SidebarMenuButton>
               <Link
                 className="flex justify-center items-center gap-1"
-                href="/employee/earnings"
+                href="/admin/revenue"
               >
-                <DollarSign /> Earnings
-              </Link>
-            </SidebarMenuButton>
-            <SidebarMenuButton>
-              <Link
-                className="flex justify-center items-center gap-1"
-                href="/employee"
-              >
-                <IdCardLanyard /> My Profile
-              </Link>
-            </SidebarMenuButton>
-            <SidebarMenuButton>
-              <Link
-                className="flex justify-center items-center gap-1"
-                href="/employee/notifications"
-              >
-                <BellRing /> Notifications
+                <ChartNoAxesColumn /> Revenue
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
@@ -81,4 +56,4 @@ const EmployeeSideBar = () => {
   );
 };
 
-export default EmployeeSideBar;
+export default AdminSideBar;
