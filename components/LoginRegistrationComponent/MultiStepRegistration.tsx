@@ -28,6 +28,7 @@ import {
 
 import { toast } from "@/components/ui/toast";
 import Image from "next/image";
+import { useRouter } from "next/router";
 
 const emailSchema = z
   .string()
@@ -56,6 +57,7 @@ export default function MultiStepRegistration({
   const [confirmPasswordError, setConfirmPasswordError] = useState<string>("");
 
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const router = useRouter();
 
   const handleStepOneSubmit = () => {
     let hasError = false;
@@ -164,6 +166,7 @@ export default function MultiStepRegistration({
         title: "Registration Successful",
         description: "Your account has been registered successfully.",
       });
+      router.push("/authentication");
     } catch (error) {
       toast.add({
         type: "error",

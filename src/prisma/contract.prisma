@@ -7,8 +7,8 @@
 
 // ───────────────────────── ENUMS ─────────────────────────
 enum Role {
-  ADMIN // platform admin (you)
-  OWNER // business owner
+  ADMIN
+  OWNER
   EMPLOYEE
 }
 

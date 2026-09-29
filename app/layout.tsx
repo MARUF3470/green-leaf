@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Poppins } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toast";
+import SessionProviders from "./providers/SessionProvider";
 
 const poppins = Poppins({
   subsets: ["latin"],
@@ -17,7 +18,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="en" className={`${poppins.className} h-full dark antialiased`}>
       <body className="min-h-full flex flex-col">
-        {children}
+        <SessionProviders>{children}</SessionProviders>
         <Toaster />
       </body>
     </html>

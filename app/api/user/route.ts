@@ -12,7 +12,7 @@ export async function POST(request: Request) {
     const user = await db.orm.public.User.create({
       username: name,
       email,
-      role,
+      role: role ? role : "OWNER",
       address,
       phone,
       passwordHash: hashPassword,

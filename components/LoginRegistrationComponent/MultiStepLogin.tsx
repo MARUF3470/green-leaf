@@ -1,5 +1,5 @@
 "use client";
-
+import { toast } from "@/components/ui/toast";
 import { useState } from "react";
 import { z } from "zod";
 import {
@@ -22,12 +22,10 @@ import {
   LogIn,
 } from "lucide-react";
 
-import { toast } from "@/components/ui/toast";
-
 import { useRouter } from "next/navigation";
 import LoginAlertDialoge from "./LoginAlertDialoge";
 
-// import { signIn } from "next-auth/react";
+import { signIn, useSession } from "next-auth/react";
 
 // Email validation schema
 const emailSchema = z
@@ -47,6 +45,8 @@ export default function MultiStepLogin() {
   const [alertRole, setAlertRole] = useState<"Admin" | "Dealer" | null>(null);
 
   // Validate email and move to next step
+  const { data } = useSession();
+
   const handleEmailSubmit = () => {
     try {
       emailSchema.parse(email);
@@ -71,18 +71,40 @@ export default function MultiStepLogin() {
 
   // Handle login submission
   const handleLogin = async () => {
-    // const signInData = await signIn("credentials", {
-    //   email,
-    //   password,
-    //   redirect: false,
-    // });
-    // if (signInData?.ok) {
-    //   toast.success("Logged in successfully!");
-    //   return router.push("/");
-    // }
-    // if (!signInData?.ok) {
-    //   toast.error(signInData?.error || "Login failed. Please try again.");
-    // }
+    const signInData = await signIn("credentials", {
+      email,
+      password,
+      redirect: false,
+    });
+
+    if (signInData?.ok) {
+      toast.add({
+        type: "success",
+        title: "Login Successful",
+        description: "You have been logged in successfully.",
+      });
+      console.log("signInData", signInData);
+
+      if (data?.user?.role === "OWNER") {
+        return router.push("/merchant");
+      }
+
+      if (data?.user?.role === "ADMIN") {
+        return router.push("/admin");
+      }
+
+      if (data?.user?.role === "EMPLOYEE") {
+        return router.push("/employee");
+      }
+
+      return router.push("/");
+    }
+
+    toast.add({
+      type: "error",
+      title: "Login Failed",
+      description: "Invalid email or password.",
+    });
   };
 
   // Go back to previous step
