@@ -29,7 +29,7 @@ const AppSideBar = () => {
         <h1>Business Name</h1>
         <SidebarMenu>
           <SidebarMenuItem>
-            <DropdownMenu>
+            {/* <DropdownMenu>
               <DropdownMenuTrigger render={<SidebarMenuButton />}>
                 Select Workspace
                 <ChevronDown className="ml-auto" />
@@ -39,11 +39,11 @@ const AppSideBar = () => {
                   <span>Acme Inc</span>
                 </DropdownMenuItem>
               </DropdownMenuContent>
-            </DropdownMenu>
+            </DropdownMenu> */}
             <SidebarMenuButton>
               <Link
                 className="flex justify-center items-center gap-1"
-                href="/merchant/dashboard"
+                href="/merchant"
               >
                 <LayoutDashboard /> Dashboard
               </Link>

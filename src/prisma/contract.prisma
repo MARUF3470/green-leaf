@@ -1,0 +1,341 @@
+// use prisma-8
+// Smart Services Dashboard - multi-tenant field service platform
+// Place at: src/prisma/contract.prisma
+//
+// Multi-tenancy rule: every business-owned table carries businessId.
+// ALWAYS filter by businessId (from the logged-in user's session) in every query.
+
+// ───────────────────────── ENUMS ─────────────────────────
+enum Role {
+  ADMIN // platform admin (you)
+  OWNER // business owner
+  EMPLOYEE
+}
+
+enum TaskStatus {
+  DRAFT
+  OPEN // created, not yet fully assigned/started
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum AssignmentStatus {
+  PENDING // request sent to employee
+  ACCEPTED
+  REJECTED
+  CANCELLED // employee cancelled after accepting, or owner withdrew
+  COMPLETED
+}
+
+enum PayoutStatus {
+  UNPAID
+  PAID
+}
+
+enum InstrumentSource {
+  OWNER_LISTED // added by owner when creating the task
+  EMPLOYEE_ADDED // bought/added by employee on site
+}
+
+enum ApprovalStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum NotificationType {
+  TASK_ASSIGNED
+  TASK_ACCEPTED
+  TASK_REJECTED
+  TASK_CANCELLED
+  TASK_COMPLETED
+  INSTRUMENT_REQUEST
+  INSTRUMENT_DECISION
+  AVAILABILITY_CHANGED
+  PAYMENT_SENT
+  SUBSCRIPTION
+}
+
+enum SubscriptionStatus {
+  TRIALING
+  ACTIVE
+  PAST_DUE
+  CANCELLED
+}
+
+enum BillingInterval {
+  MONTHLY
+  YEARLY
+}
+
+// ───────────────────────── TENANT & AUTH ─────────────────────────
+model Business {
+  id            String               @id @default(uuid())
+  name          String
+  logoUrl       String?
+  category      String? // e.g. "Gardening"
+  address       String?
+  phone         String?
+  createdAt     DateTime             @default(now())
+  updatedAt     temporal.updatedAt()
+
+  users         User[]
+  tasks         Task[]
+  instruments   Instrument[]
+  expenses      Expense[]
+  payments      Payment[]
+  notifications Notification[]
+  subscription  Subscription?
+}
+
+model User {
+  id                    String               @id @default(uuid())
+  businessId            String? // null only for platform ADMIN
+  role                  Role
+  username              String // owner-issued credential for employees
+  email                 String               @unique
+  address               String?
+  phone                 String?
+  imageUrl              String?
+  passwordHash          String
+  mustChangePassword    Boolean              @default(false) // force reset on first employee login
+  isActive              Boolean              @default(true)
+  createdAt             DateTime             @default(now())
+  updatedAt             temporal.updatedAt()
+
+  business              Business?            @relation(fields:[businessId], references:[id])
+  profile               EmployeeProfile?
+
+  assignments           TaskAssignment[]
+  instrumentsAdded      Instrument[]         @relation("InstrumentAddedBy")
+  instrumentsReviewed   Instrument[]         @relation("InstrumentReviewedBy")
+  paymentsMade          Payment[]            @relation("PaymentPaidBy")
+  notificationsReceived Notification[]
+
+  @@unique([businessId, username])
+  @@index([businessId])
+}
+
+// Employee-facing profile (also usable for owner's own profile)
+model EmployeeProfile {
+  id                    String               @id @default(uuid())
+  userId                String               @unique
+  fullName              String
+  photoUrl              String?
+  phone                 String?
+  contactEmail          String?
+  address               String?
+  isAvailable           Boolean              @default(true) // availability toggle
+  availabilityUpdatedAt DateTime             @default(now())
+  createdAt             DateTime             @default(now())
+  updatedAt             temporal.updatedAt()
+
+  user                  User                 @relation(fields:[userId], references:[id], onDelete: Cascade)
+  bankAccount           BankAccount?
+}
+
+// SECURITY: never store the raw account number in plaintext.
+// Encrypt at the application layer (or better: use Stripe Connect / Razorpay Route
+// and store only the provider's account id).
+model BankAccount {
+  id                     String               @id @default(uuid())
+  profileId              String               @unique
+  accountHolderName      String
+  bankName               String
+  branch                 String?
+  routingCode            String? // routing / IFSC / sort code
+  accountNumberEncrypted String // encrypted at app layer
+  accountLast4           String // for masked display: •••• 1234
+  providerAccountId      String? // e.g. Stripe Connect account id
+  createdAt              DateTime             @default(now())
+  updatedAt              temporal.updatedAt()
+
+  profile                EmployeeProfile      @relation(fields:[profileId], references:[id], onDelete: Cascade)
+}
+
+// ───────────────────────── TASKS ─────────────────────────
+
+// Fields here are safe for employees to see.
+model Task {
+  id              String               @id @default(uuid())
+  businessId      String
+  name            String
+  description     String?
+  locationAddress String
+  latitude        Float?
+  longitude       Float?
+  scheduledStart  DateTime?
+  durationMinutes Int
+  status          TaskStatus           @default(OPEN)
+  createdAt       DateTime             @default(now())
+  updatedAt       temporal.updatedAt()
+
+  business        Business             @relation(fields:[businessId], references:[id], onDelete: Cascade)
+  finance         TaskFinance?
+  assignments     TaskAssignment[]
+  instruments     Instrument[]
+  expenses        Expense[]
+
+  @@index([businessId, status])
+  @@index([businessId, scheduledStart])
+}
+
+// OWNER-ONLY money data, kept in a separate table on purpose so an employee
+// query on Task can never accidentally expose the price.
+model TaskFinance {
+  id        String               @id @default(uuid())
+  taskId    String               @unique
+  price     Float // what the business charges the client
+  updatedAt temporal.updatedAt()
+
+  task      Task                 @relation(fields:[taskId], references:[id], onDelete: Cascade)
+}
+
+// One row per employee per task (a task can have several employees).
+model TaskAssignment {
+  id           String               @id @default(uuid())
+  taskId       String
+  employeeId   String // User.id (role EMPLOYEE)
+  status       AssignmentStatus     @default(PENDING)
+  payoutAmount Float // locked at assignment time; visible to the employee
+  payoutStatus PayoutStatus         @default(UNPAID)
+  respondedAt  DateTime?
+  cancelReason String?
+  completedAt  DateTime?
+  createdAt    DateTime             @default(now())
+  updatedAt    temporal.updatedAt()
+
+  task         Task                 @relation(fields:[taskId], references:[id], onDelete: Cascade)
+  employee     User                 @relation(fields:[employeeId], references:[id])
+  payment      Payment?
+
+  @@unique([taskId, employeeId])
+  @@index([employeeId, status])
+}
+
+// ───────────────────────── INSTRUMENTS & COSTS ─────────────────────────
+model Instrument {
+  id           String           @id @default(uuid())
+  businessId   String
+  taskId       String
+  name         String
+  quantity     Int              @default(1)
+  price        Float? // cost (required when employee buys/replaces one)
+  source       InstrumentSource
+  reason       String? // e.g. "new purchase" / "broke down"
+  receiptUrl   String?
+  approval     ApprovalStatus   @default(APPROVED) // set PENDING for EMPLOYEE_ADDED
+  addedById    String
+  reviewedById String?
+  reviewedAt   DateTime?
+  createdAt    DateTime         @default(now())
+
+  business     Business         @relation(fields:[businessId], references:[id], onDelete: Cascade)
+  task         Task             @relation(fields:[taskId], references:[id], onDelete: Cascade)
+  addedBy      User             @relation("InstrumentAddedBy", fields:[addedById], references:[id])
+  reviewedBy   User?            @relation("InstrumentReviewedBy", fields:[reviewedById], references:[id])
+
+  @@index([taskId])
+  @@index([businessId, approval])
+}
+
+// "Other fees" for the profit calculation (fuel, transport, permits, ...)
+model Expense {
+  id         String   @id @default(uuid())
+  businessId String
+  taskId     String? // null = general business expense
+  label      String
+  amount     Float
+  incurredAt DateTime @default(now())
+  createdAt  DateTime @default(now())
+
+  business   Business @relation(fields:[businessId], references:[id], onDelete: Cascade)
+  task       Task?    @relation(fields:[taskId], references:[id], onDelete: SetNull)
+
+  @@index([businessId, incurredAt])
+}
+
+// ───────────────────────── PAYOUTS ─────────────────────────
+
+// Record of an owner transferring an employee's payout from the task page.
+model Payment {
+  id           String         @id @default(uuid())
+  businessId   String
+  assignmentId String         @unique
+  amount       Float
+  reference    String? // bank/provider transaction reference
+  note         String?
+  paidById     String
+  paidAt       DateTime       @default(now())
+
+  business     Business       @relation(fields:[businessId], references:[id], onDelete: Cascade)
+  assignment   TaskAssignment @relation(fields:[assignmentId], references:[id])
+  paidBy       User           @relation("PaymentPaidBy", fields:[paidById], references:[id])
+
+  @@index([businessId, paidAt])
+}
+
+// ───────────────────────── NOTIFICATIONS ─────────────────────────
+model Notification {
+  id         String           @id @default(uuid())
+  businessId String
+  userId     String // recipient
+  type       NotificationType
+  title      String
+  body       String?
+  taskId     String? // optional deep link
+  isRead     Boolean          @default(false)
+  createdAt  DateTime         @default(now())
+
+  business   Business         @relation(fields:[businessId], references:[id], onDelete: Cascade)
+  user       User             @relation(fields:[userId], references:[id], onDelete: Cascade)
+
+  @@index([userId, isRead, createdAt])
+}
+
+// ───────────────────────── SUBSCRIPTIONS (platform billing) ─────────────────────────
+model Plan {
+  id               String          @id @default(uuid())
+  name             String          @unique // Starter / Pro / ...
+  price            Float
+  interval         BillingInterval
+  maxEmployees     Int?
+  maxTasksPerMonth Int?
+  providerPriceId  String? // Stripe price id
+  isActive         Boolean         @default(true)
+
+  subscriptions    Subscription[]
+}
+
+model Subscription {
+  id                     String               @id @default(uuid())
+  businessId             String               @unique
+  planId                 String
+  status                 SubscriptionStatus   @default(TRIALING)
+  currentPeriodStart     DateTime
+  currentPeriodEnd       DateTime
+  cancelAtPeriodEnd      Boolean              @default(false)
+  providerCustomerId     String? // Stripe customer id
+  providerSubscriptionId String? // Stripe subscription id
+  createdAt              DateTime             @default(now())
+  updatedAt              temporal.updatedAt()
+
+  business               Business             @relation(fields:[businessId], references:[id], onDelete: Cascade)
+  plan                   Plan                 @relation(fields:[planId], references:[id])
+  invoices               Invoice[]
+}
+
+model Invoice {
+  id                String       @id @default(uuid())
+  subscriptionId    String
+  amount            Float
+  status            String // paid / open / failed
+  providerInvoiceId String?
+  issuedAt          DateTime     @default(now())
+  paidAt            DateTime?
+
+  subscription      Subscription @relation(fields:[subscriptionId], references:[id], onDelete: Cascade)
+
+  @@index([subscriptionId])
+}
