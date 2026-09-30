@@ -26,6 +26,9 @@ export default function HomeNavBar({ user }: { user: User }) {
           <Link href="/contact" className="transition hover:text-white">
             Contact
           </Link>
+          <Link href="/create-business" className="transition hover:text-white">
+            Create Your Business
+          </Link>
         </div>
 
         {user ? (
