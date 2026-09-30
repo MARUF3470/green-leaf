@@ -1,9 +1,14 @@
 import DotField from "@/components/DotField";
 import HomeNavBar from "@/components/NavBar/HomeNavBar";
 import { Button } from "@/components/ui/button";
+import { authOptions } from "@/lib/auth";
+import { getServerSession } from "next-auth";
 import Link from "next/link";
 
-export default function Home() {
+export default async function Home() {
+  const session = await getServerSession(authOptions);
+  console.log(session, "server session");
+  const user = session?.user;
   return (
     <main className="relative min-h-screen overflow-hidden bg-[#050505] text-white">
       <DotField
@@ -21,7 +26,7 @@ export default function Home() {
         gradientTo="rgba(180, 151, 207, 0.3)"
         glowColor="#A855F7"
       />
-      <HomeNavBar />
+      <HomeNavBar user={user} />
       <section className="relative z-10 flex min-h-screen flex-col items-center justify-center px-6 text-center">
         <h1 className="text-5xl font-bold tracking-normal">
           Welcome to Green Leaf
