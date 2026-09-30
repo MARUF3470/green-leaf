@@ -25,7 +25,7 @@ import {
 import { useRouter } from "next/navigation";
 import LoginAlertDialoge from "./LoginAlertDialoge";
 
-import { signIn, useSession } from "next-auth/react";
+import { signIn, getSession } from "next-auth/react";
 
 // Email validation schema
 const emailSchema = z
@@ -45,7 +45,6 @@ export default function MultiStepLogin() {
   const [alertRole, setAlertRole] = useState<"Admin" | "Dealer" | null>(null);
 
   // Validate email and move to next step
-  const { data } = useSession();
 
   const handleEmailSubmit = () => {
     try {
@@ -71,40 +70,41 @@ export default function MultiStepLogin() {
 
   // Handle login submission
   const handleLogin = async () => {
+    setIsLoading(true);
     const signInData = await signIn("credentials", {
       email,
       password,
       redirect: false,
     });
-
+    console.log(signInData, "signInData");
     if (signInData?.ok) {
+      setIsLoading(false);
       toast.add({
         type: "success",
         title: "Login Successful",
         description: "You have been logged in successfully.",
       });
-      console.log("signInData", signInData);
 
-      if (data?.user?.role === "OWNER") {
+      const session = await getSession();
+      if (session?.user?.role === "OWNER") {
         return router.push("/merchant");
       }
-
-      if (data?.user?.role === "ADMIN") {
+      if (session?.user?.role === "ADMIN") {
         return router.push("/admin");
       }
-
-      if (data?.user?.role === "EMPLOYEE") {
+      if (session?.user?.role === "EMPLOYEE") {
         return router.push("/employee");
+      } else {
+        return router.push("/");
       }
-
-      return router.push("/");
+    } else {
+      setIsLoading(false);
+      toast.add({
+        type: "error",
+        title: "Login Failed",
+        description: signInData?.error,
+      });
     }
-
-    toast.add({
-      type: "error",
-      title: "Login Failed",
-      description: "Invalid email or password.",
-    });
   };
 
   // Go back to previous step
