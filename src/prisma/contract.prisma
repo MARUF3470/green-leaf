@@ -91,15 +91,16 @@ model Business {
 
 model User {
   id                    String               @id @default(uuid())
-  businessId            String? // null only for platform ADMIN
+  businessId            String?
+  whoAdded              String? // ID of the owner who created this employee
   role                  Role
-  username              String // owner-issued credential for employees
+  username              String
   email                 String               @unique
   address               String?
   phone                 String?
   imageUrl              String?
   passwordHash          String
-  mustChangePassword    Boolean              @default(false) // force reset on first employee login
+  mustChangePassword    Boolean              @default(false)
   isActive              Boolean              @default(true)
   createdAt             DateTime             @default(now())
   updatedAt             temporal.updatedAt()
@@ -115,6 +116,7 @@ model User {
 
   @@unique([businessId, username])
   @@index([businessId])
+  @@index([whoAdded])
 }
 
 // Employee-facing profile (also usable for owner's own profile)

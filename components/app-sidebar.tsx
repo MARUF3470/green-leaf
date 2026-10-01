@@ -13,7 +13,9 @@ import {
   ChevronDown,
   IdCardLanyard,
   LayoutDashboard,
+  PlusCircle,
   Receipt,
+  UserPlus,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -59,9 +61,25 @@ const AppSideBar = () => {
             <SidebarMenuButton>
               <Link
                 className="flex justify-center items-center gap-1"
+                href="/merchant/add-task"
+              >
+                <PlusCircle /> Add Task
+              </Link>
+            </SidebarMenuButton>
+            <SidebarMenuButton>
+              <Link
+                className="flex justify-center items-center gap-1"
                 href="/merchant/employees"
               >
                 <IdCardLanyard /> Employees
+              </Link>
+            </SidebarMenuButton>
+            <SidebarMenuButton>
+              <Link
+                className="flex justify-center items-center gap-1"
+                href="/merchant/add-employee"
+              >
+                <UserPlus /> Add Employees
               </Link>
             </SidebarMenuButton>
             <SidebarMenuButton>

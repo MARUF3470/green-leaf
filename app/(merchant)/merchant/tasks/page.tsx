@@ -13,6 +13,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import Link from "next/link";
 
 const filters = [
   "All",
@@ -115,10 +116,12 @@ export default function MerchantTasksPage() {
           <p className="mt-1 text-sm text-muted-foreground">6 total tasks</p>
         </div>
 
-        <Button className="gap-2 bg-blue-600 text-white hover:bg-blue-700">
-          <Plus size={16} />
-          New Task
-        </Button>
+        <Link href="/merchant/add-task">
+          <Button className="gap-2 bg-blue-600 text-white hover:bg-blue-700">
+            <Plus size={16} />
+            New Task
+          </Button>
+        </Link>
       </div>
 
       <div className="mt-7 flex flex-wrap gap-3">

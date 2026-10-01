@@ -2317,6 +2317,13 @@
                   "codecId": "pg/text@1",
                   "kind": "scalar"
                 }
+              },
+              "whoAdded": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
               }
             },
             "relations": {
@@ -2468,6 +2475,9 @@
                 },
                 "username": {
                   "column": "username"
+                },
+                "whoAdded": {
+                  "column": "whoAdded"
                 }
               },
               "namespaceId": "public",
@@ -4107,6 +4117,11 @@
                   "codecId": "pg/text@1",
                   "nativeType": "text",
                   "nullable": false
+                },
+                "whoAdded": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true
                 }
               },
               "foreignKeys": [
@@ -4134,6 +4149,14 @@
                   ],
                   "name": "User_businessId_idx_ae0ed511",
                   "prefix": "User_businessId_idx",
+                  "unique": false
+                },
+                {
+                  "columns": [
+                    "whoAdded"
+                  ],
+                  "name": "User_whoAdded_idx_3105b2f1",
+                  "prefix": "User_whoAdded_idx",
                   "unique": false
                 }
               ],
@@ -4245,7 +4268,7 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "b1daa3d7cb74b917344b7ccefe7ca53049026dd649b0ab7a4f35a47a1ff640ae"
+    "storageHash": "9d9705cdaba744ceb3b3fb55c837469112121ca5802bae1fb6ef26071349d692"
   },
   "execution": {
     "executionHash": "6b3f2b55c986284dbd5e540b0720bcd72e761f6e01a3c247a079f076c9d55dae",
