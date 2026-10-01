@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Building2, Tag, MapPin, Phone, Loader2, Save } from "lucide-react";
 import { toast } from "@/components/ui/toast";
+import { useRouter } from "next/navigation";
 
 // Matches the Business model: name, category, address, phone
 const businessSchema = z.object({
@@ -32,12 +33,12 @@ export default function BusinessInfoForm() {
 
   const [nameError, setNameError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-
+  const router = useRouter();
   const handleSubmit = async () => {
     const result = businessSchema.safeParse({ name, category, address, phone });
 
     if (!result.success) {
-      const fieldErrors = result.error.flatten().fieldErrors;
+      const fieldErrors = z.flattenError(result.error).fieldErrors;
       setNameError(fieldErrors.name?.[0] ?? "");
       return;
     }
@@ -62,6 +63,7 @@ export default function BusinessInfoForm() {
         title: "Business Saved",
         description: "Your business information has been saved successfully.",
       });
+      router.push("/merchant");
     } catch (error: any) {
       toast.add({
         type: "error",

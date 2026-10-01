@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
+import Link from "next/link";
 
 const employees = [
   {
@@ -78,10 +79,12 @@ export default function MerchantEmployeesPage() {
           <p className="mt-1 text-sm text-muted-foreground">4 team members</p>
         </div>
 
-        <Button className="gap-2 bg-blue-600 text-white hover:bg-blue-700">
-          <Plus size={16} />
-          Add Employee
-        </Button>
+        <Link href="/merchant/add-employee">
+          <Button className="gap-2 bg-blue-600 text-white hover:bg-blue-700">
+            <Plus size={16} />
+            Add Employee
+          </Button>
+        </Link>
       </div>
 
       <section className="mt-7 grid gap-5 xl:grid-cols-2">
