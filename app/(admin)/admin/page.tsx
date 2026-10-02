@@ -14,7 +14,7 @@ import {
 
 const businesses = [
   {
-    business: "GreenLeaf Services",
+    business: "GreenLeaf Services for adimin",
     owner: "Marcus Johnson",
     plan: "Growth",
     status: "Active",
