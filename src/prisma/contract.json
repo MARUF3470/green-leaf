@@ -424,6 +424,13 @@
                   "kind": "scalar"
                 }
               },
+              "isActive": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/bool@1",
+                  "kind": "scalar"
+                }
+              },
               "logoUrl": {
                 "nullable": true,
                 "type": {
@@ -574,6 +581,9 @@
                 },
                 "id": {
                   "column": "id"
+                },
+                "isActive": {
+                  "column": "isActive"
                 },
                 "logoUrl": {
                   "column": "logoUrl"
@@ -2614,6 +2624,15 @@
                   "nativeType": "text",
                   "nullable": false
                 },
+                "isActive": {
+                  "codecId": "pg/bool@1",
+                  "default": {
+                    "kind": "literal",
+                    "value": true
+                  },
+                  "nativeType": "bool",
+                  "nullable": false
+                },
                 "logoUrl": {
                   "codecId": "pg/text@1",
                   "nativeType": "text",
@@ -4268,7 +4287,7 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "9d9705cdaba744ceb3b3fb55c837469112121ca5802bae1fb6ef26071349d692"
+    "storageHash": "e125440970e426975a676bd167f757ec821751fd7acb24339ac909ec58d99cef"
   },
   "execution": {
     "executionHash": "6b3f2b55c986284dbd5e540b0720bcd72e761f6e01a3c247a079f076c9d55dae",

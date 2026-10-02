@@ -28,7 +28,7 @@ import {
 
 import { toast } from "@/components/ui/toast";
 import Image from "next/image";
-import { useRouter } from "next/router";
+import { useRouter } from "next/navigation";
 
 const emailSchema = z
   .string()
