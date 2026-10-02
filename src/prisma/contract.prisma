@@ -79,7 +79,7 @@ model Business {
   phone         String?
   createdAt     DateTime             @default(now())
   updatedAt     temporal.updatedAt()
-
+  isActive      Boolean              @default(true)
   users         User[]
   tasks         Task[]
   instruments   Instrument[]
