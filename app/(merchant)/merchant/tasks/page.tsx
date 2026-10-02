@@ -1,6 +1,8 @@
-// app/(merchant)/merchant/tasks/page.tsx
+"use client";
 
-import { Plus } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { Plus, RefreshCw, Trash2 } from "lucide-react";
+import Link from "next/link";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -13,7 +15,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import Link from "next/link";
 
 const filters = [
   "All",
@@ -22,123 +23,226 @@ const filters = [
   "In Progress",
   "Completed",
   "Cancelled",
-];
+] as const;
 
-const tasks = [
-  {
-    task: "Lawn Mowing - 820 Riverside Dr",
-    address: "820 Riverside Dr, Austin, TX",
-    employee: "Sofia Arenas",
-    duration: "3 hours",
-    status: "In Progress",
-    price: "$150",
-    color: "blue",
-  },
-  {
-    task: "Hedge Trimming - Sunset Hill Estate",
-    address: "14 Sunset Hill Rd, Austin, TX",
-    employee: "Priya Nair",
-    duration: "2 hours",
-    status: "In Progress",
-    price: "$120",
-    color: "blue",
-  },
-  {
-    task: "Full Garden Service - Meadow Park",
-    address: "Meadow Park Community, Austin, TX",
-    employee: "James Okafor",
-    duration: "5 hours",
-    status: "Pending",
-    price: "$260",
-    color: "orange",
-  },
-  {
-    task: "Deep Clean - 2201 Congress Ave",
-    address: "2201 Congress Ave, Austin, TX",
-    employee: "Carlos Mendez",
-    duration: "4 hours",
-    status: "Completed",
-    price: "$195",
-    color: "green",
-  },
-  {
-    task: "Pressure Wash - Cedar Blvd Driveway",
-    address: "220 Cedar Blvd, Austin, TX",
-    employee: "Sofia Arenas",
-    duration: "2 hours",
-    status: "Accepted",
-    price: "$130",
-    color: "blue",
-  },
-  {
-    task: "Irrigation System Check - Barton Creek",
-    address: "Barton Creek Blvd, Austin, TX",
-    employee: "James Okafor",
-    duration: "1.5 hours",
-    status: "Cancelled",
-    price: "$90",
-    color: "muted",
-  },
-];
+type TaskStatus = (typeof filters)[number];
 
-function getStatusClass(color: string) {
-  switch (color) {
-    case "blue":
+type MerchantTask = {
+  id: string;
+  task: string;
+  address: string;
+  employee: string;
+  durationMinutes: number;
+  status: Exclude<TaskStatus, "All">;
+  price: number;
+  scheduledStart: string | null;
+  createdAt: string | null;
+};
+
+function getStatusClass(status: string) {
+  switch (status) {
+    case "Accepted":
+    case "In Progress":
       return "bg-blue-500/10 text-blue-600 dark:text-blue-400";
-    case "orange":
+    case "Pending":
       return "bg-orange-500/10 text-orange-600 dark:text-orange-400";
-    case "green":
+    case "Completed":
       return "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400";
     default:
       return "bg-muted text-muted-foreground";
   }
 }
 
-function getDotClass(color: string) {
-  switch (color) {
-    case "blue":
+function getDotClass(status: string) {
+  switch (status) {
+    case "Accepted":
+    case "In Progress":
       return "bg-blue-500";
-    case "orange":
+    case "Pending":
       return "bg-orange-500";
-    case "green":
+    case "Completed":
       return "bg-emerald-500";
     default:
       return "bg-muted-foreground/50";
   }
 }
 
+function formatCurrency(value: number) {
+  return new Intl.NumberFormat("en-AU", {
+    style: "currency",
+    currency: "AUD",
+    maximumFractionDigits: 2,
+  }).format(value);
+}
+
+function formatDuration(minutes: number) {
+  if (!minutes || minutes <= 0) return "—";
+
+  const hours = Math.floor(minutes / 60);
+  const remainingMinutes = minutes % 60;
+
+  if (hours === 0) return `${remainingMinutes} min`;
+  if (remainingMinutes === 0) {
+    return `${hours} ${hours === 1 ? "hour" : "hours"}`;
+  }
+
+  return `${hours}h ${remainingMinutes}m`;
+}
+
 export default function MerchantTasksPage() {
+  const [tasks, setTasks] = useState<MerchantTask[]>([]);
+  const [activeFilter, setActiveFilter] = useState<TaskStatus>("All");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [deletingTaskId, setDeletingTaskId] = useState<string | null>(null);
+  const handleDeleteTask = async (task: MerchantTask) => {
+    const confirmed = window.confirm(
+      `Are you sure you want to delete "${task.task}"? This action cannot be undone.`,
+    );
+
+    if (!confirmed) return;
+
+    try {
+      setDeletingTaskId(task.id);
+      setError("");
+
+      const response = await fetch("/api/merchant/tasks", {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ taskId: task.id }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.message || "Failed to delete task.");
+      }
+
+      // Remove the deleted task from the current UI.
+      setTasks((currentTasks) =>
+        currentTasks.filter((item) => item.id !== task.id),
+      );
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Something went wrong while deleting the task.",
+      );
+    } finally {
+      setDeletingTaskId(null);
+    }
+  };
+  const fetchTasks = useCallback(async () => {
+    try {
+      setError("");
+
+      const response = await fetch("/api/merchant/tasks", {
+        method: "GET",
+        cache: "no-store",
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.message || "Failed to load tasks.");
+      }
+
+      setTasks(Array.isArray(result.tasks) ? result.tasks : []);
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Something went wrong while loading tasks.",
+      );
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void fetchTasks();
+  }, [fetchTasks]);
+
+  const filteredTasks = useMemo(() => {
+    if (activeFilter === "All") return tasks;
+
+    return tasks.filter((task) => task.status === activeFilter);
+  }, [tasks, activeFilter]);
+
   return (
     <main className="min-h-screen bg-background px-4 py-8 text-foreground sm:px-6">
-      <div className="flex items-start justify-between gap-4">
+      <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold tracking-normal">Tasks</h1>
-          <p className="mt-1 text-sm text-muted-foreground">6 total tasks</p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            {loading
+              ? "Loading tasks..."
+              : `${tasks.length} total ${
+                  tasks.length === 1 ? "task" : "tasks"
+                }`}
+          </p>
         </div>
 
-        <Link href="/merchant/add-task">
-          <Button className="gap-2 bg-blue-600 text-white hover:bg-blue-700">
-            <Plus size={16} />
-            New Task
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              setLoading(true);
+              void fetchTasks();
+            }}
+            disabled={loading}
+          >
+            <RefreshCw
+              className={`mr-2 size-4 ${loading ? "animate-spin" : ""}`}
+            />
+            Refresh
           </Button>
-        </Link>
+
+          <Link href="/merchant/add-task">
+            <Button className="gap-2 bg-blue-600 text-white hover:bg-blue-700">
+              <Plus size={16} />
+              New Task
+            </Button>
+          </Link>
+        </div>
       </div>
 
       <div className="mt-7 flex flex-wrap gap-3">
         {filters.map((filter) => (
           <Button
             key={filter}
-            variant={filter === "All" ? "default" : "outline"}
+            variant={activeFilter === filter ? "default" : "outline"}
+            onClick={() => setActiveFilter(filter)}
             className={
-              filter === "All"
+              activeFilter === filter
                 ? "bg-blue-600 text-white hover:bg-blue-700"
                 : "bg-card"
             }
           >
             {filter}
+            {filter === "All" ? ` (${tasks.length})` : ""}
           </Button>
         ))}
       </div>
+
+      {error && (
+        <div className="mt-5 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3">
+          <p className="text-sm text-destructive">{error}</p>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              setLoading(true);
+              void fetchTasks();
+            }}
+          >
+            Try again
+          </Button>
+        </div>
+      )}
 
       <Card className="mt-7 overflow-hidden p-0">
         <CardContent className="p-0">
@@ -150,46 +254,87 @@ export default function MerchantTasksPage() {
                 <TableHead>Duration</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="text-right">Price</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
 
             <TableBody>
-              {tasks.map((task) => (
-                <TableRow key={task.task}>
-                  <TableCell className="py-5">
-                    <div>
-                      <p className="font-semibold text-foreground">
-                        {task.task}
-                      </p>
-                      <p className="mt-1 text-xs text-muted-foreground">
-                        {task.address}
-                      </p>
-                    </div>
-                  </TableCell>
-
-                  <TableCell className="text-muted-foreground">
-                    {task.employee}
-                  </TableCell>
-
-                  <TableCell>{task.duration}</TableCell>
-
-                  <TableCell>
-                    <Badge
-                      variant="secondary"
-                      className={`gap-1.5 rounded-full ${getStatusClass(task.color)}`}
-                    >
-                      <span
-                        className={`size-1.5 rounded-full ${getDotClass(task.color)}`}
-                      />
-                      {task.status}
-                    </Badge>
-                  </TableCell>
-
-                  <TableCell className="text-right font-bold">
-                    {task.price}
+              {loading ? (
+                <TableRow>
+                  <TableCell
+                    colSpan={5}
+                    className="py-12 text-center text-muted-foreground"
+                  >
+                    Loading tasks...
                   </TableCell>
                 </TableRow>
-              ))}
+              ) : filteredTasks.length === 0 ? (
+                <TableRow>
+                  <TableCell
+                    colSpan={5}
+                    className="py-12 text-center text-muted-foreground"
+                  >
+                    {tasks.length === 0
+                      ? "No tasks have been created yet."
+                      : `No ${activeFilter.toLowerCase()} tasks found.`}
+                  </TableCell>
+                </TableRow>
+              ) : (
+                filteredTasks.map((task) => (
+                  <TableRow key={task.id}>
+                    <TableCell className="py-5">
+                      <div>
+                        <p className="font-semibold text-foreground">
+                          {task.task}
+                        </p>
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          {task.address || "No address provided"}
+                        </p>
+                      </div>
+                    </TableCell>
+
+                    <TableCell className="text-muted-foreground">
+                      {task.employee}
+                    </TableCell>
+
+                    <TableCell>
+                      {formatDuration(task.durationMinutes)}
+                    </TableCell>
+
+                    <TableCell>
+                      <Badge
+                        variant="secondary"
+                        className={`gap-1.5 rounded-full ${getStatusClass(
+                          task.status,
+                        )}`}
+                      >
+                        <span
+                          className={`size-1.5 rounded-full ${getDotClass(
+                            task.status,
+                          )}`}
+                        />
+                        {task.status}
+                      </Badge>
+                    </TableCell>
+
+                    <TableCell className="text-right font-bold">
+                      {formatCurrency(task.price)}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        disabled={deletingTaskId === task.id}
+                        onClick={() => void handleDeleteTask(task)}
+                        className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+                      >
+                        <Trash2 className="mr-2 size-4" />
+                        {deletingTaskId === task.id ? "Deleting..." : "Delete"}
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
             </TableBody>
           </Table>
         </CardContent>

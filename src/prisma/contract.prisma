@@ -21,10 +21,11 @@ enum TaskStatus {
 }
 
 enum AssignmentStatus {
-  PENDING // request sent to employee
+  PENDING
   ACCEPTED
   REJECTED
-  CANCELLED // employee cancelled after accepting, or owner withdrew
+  CANCELLED
+  IN_PROGRESS
   COMPLETED
 }
 
@@ -282,18 +283,19 @@ model Payment {
 model Notification {
   id         String           @id @default(uuid())
   businessId String
-  userId     String // recipient
+  userId     String
   type       NotificationType
   title      String
   body       String?
-  taskId     String? // optional deep link
+  taskId     String?
   isRead     Boolean          @default(false)
   createdAt  DateTime         @default(now())
 
-  business   Business         @relation(fields:[businessId], references:[id], onDelete: Cascade)
-  user       User             @relation(fields:[userId], references:[id], onDelete: Cascade)
+  business   Business         @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  user       User             @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, isRead, createdAt])
+  @@index([businessId, createdAt])
 }
 
 // ───────────────────────── SUBSCRIPTIONS (platform billing) ─────────────────────────

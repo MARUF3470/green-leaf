@@ -1,60 +1,32 @@
-import { MapPin, Plus, Star } from "lucide-react";
+"use client";
 
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
+import { useCallback, useEffect, useState } from "react";
+import { MapPin, Plus, Trash2, Users } from "lucide-react";
 import Link from "next/link";
 
-const employees = [
-  {
-    name: "Sofia Arenas",
-    email: "sofia@greenleaf.io",
-    task: "Lawn mowing - Riverside Dr",
-    completed: 34,
-    rating: 4.8,
-    status: "Available",
-    statusColor: "available",
-    image:
-      "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=120&h=120&fit=crop&crop=face",
-  },
-  {
-    name: "Carlos Mendez",
-    email: "carlos@greenleaf.io",
-    task: "No active task",
-    completed: 22,
-    rating: 4.5,
-    status: "Unavailable",
-    statusColor: "unavailable",
-    image:
-      "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=120&h=120&fit=crop&crop=face",
-  },
-  {
-    name: "Priya Nair",
-    email: "priya@greenleaf.io",
-    task: "Hedge trimming - Sunset Hill",
-    completed: 18,
-    rating: 4.9,
-    status: "Available",
-    statusColor: "available",
-    image:
-      "https://images.unsplash.com/photo-1531123897727-8f129e1688ce?w=120&h=120&fit=crop&crop=face",
-  },
-  {
-    name: "James Okafor",
-    email: "james@greenleaf.io",
-    task: "Irrigation check - Meadow Park",
-    completed: 29,
-    rating: 4.7,
-    status: "Available",
-    statusColor: "available",
-    image:
-      "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=120&h=120&fit=crop&crop=face",
-  },
-];
+import {
+  Avatar,
+  AvatarFallback,
+} from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+} from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
 
-function getStatusClass(statusColor: string) {
+type Employee = {
+  id: string;
+  name: string;
+  email: string;
+  task: string;
+  completed: number;
+  status: "Available" | "Unavailable";
+  statusColor: "available" | "unavailable";
+};
+
+function getStatusClass(statusColor: Employee["statusColor"]) {
   if (statusColor === "available") {
     return "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400";
   }
@@ -62,21 +34,112 @@ function getStatusClass(statusColor: string) {
   return "bg-red-500/15 text-red-700 dark:text-red-400";
 }
 
-function getDotClass(statusColor: string) {
-  if (statusColor === "available") {
-    return "bg-emerald-500";
-  }
+function getDotClass(statusColor: Employee["statusColor"]) {
+  return statusColor === "available"
+    ? "bg-emerald-500"
+    : "bg-red-500";
+}
 
-  return "bg-red-500";
+function getInitials(name: string) {
+  return name
+    .split(" ")
+    .filter(Boolean)
+    .map((part) => part[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
 }
 
 export default function MerchantEmployeesPage() {
+  const [employees, setEmployees] = useState<Employee[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [deletingEmployeeId, setDeletingEmployeeId] =
+    useState<string | null>(null);
+
+  const fetchEmployees = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError("");
+
+      const response = await fetch("/api/merchant/employees");
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch employees");
+      }
+
+      const data: Employee[] = await response.json();
+      setEmployees(data);
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Something went wrong",
+      );
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchEmployees();
+  }, [fetchEmployees]);
+
+  const handleRemoveEmployee = async (employee: Employee) => {
+    const confirmed = window.confirm(
+      `Are you sure you want to remove ${employee.name}?`,
+    );
+
+    if (!confirmed) return;
+
+    try {
+      setDeletingEmployeeId(employee.id);
+      setError("");
+
+      const response = await fetch("/api/merchant/employees", {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          employeeId: employee.id,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          data.message || "Failed to remove employee",
+        );
+      }
+
+      setEmployees((current) =>
+        current.filter((item) => item.id !== employee.id),
+      );
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Failed to remove employee",
+      );
+    } finally {
+      setDeletingEmployeeId(null);
+    }
+  };
+
   return (
     <main className="min-h-screen bg-background px-4 py-8 text-foreground sm:px-6">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-normal">Employees</h1>
-          <p className="mt-1 text-sm text-muted-foreground">4 team members</p>
+          <h1 className="text-2xl font-bold tracking-normal">
+            Employees
+          </h1>
+
+          <p className="mt-1 text-sm text-muted-foreground">
+            {employees.length} team{" "}
+            {employees.length === 1 ? "member" : "members"}
+          </p>
         </div>
 
         <Link href="/merchant/add-employee">
@@ -87,75 +150,123 @@ export default function MerchantEmployeesPage() {
         </Link>
       </div>
 
-      <section className="mt-7 grid gap-5 xl:grid-cols-2">
-        {employees.map((employee) => (
-          <Card key={employee.email} className="shadow-sm">
-            <CardContent className="p-6">
-              <div className="flex items-start justify-between gap-4">
-                <div className="flex gap-4">
-                  <Avatar className="size-16">
-                    <AvatarImage src={employee.image} alt={employee.name} />
-                    <AvatarFallback>
-                      {employee.name
-                        .split(" ")
-                        .map((part) => part[0])
-                        .join("")}
-                    </AvatarFallback>
-                  </Avatar>
+      {error && (
+        <div
+          role="alert"
+          className="mt-5 rounded-lg border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-700 dark:text-red-400"
+        >
+          {error}
+        </div>
+      )}
 
-                  <div>
-                    <h2 className="font-bold">{employee.name}</h2>
-                    <p className="mt-1 text-sm text-muted-foreground">
-                      {employee.email}
-                    </p>
+      {loading ? (
+        <div className="py-16 text-center text-sm text-muted-foreground">
+          Loading employees...
+        </div>
+      ) : employees.length === 0 ? (
+        <Card className="mt-7">
+          <CardContent className="flex flex-col items-center py-16 text-center">
+            <Users className="mb-3 size-10 text-muted-foreground" />
 
-                    <div className="mt-2 flex items-center gap-1.5 text-sm text-muted-foreground">
-                      <MapPin size={14} className="text-pink-500" />
-                      <span>{employee.task}</span>
+            <h2 className="font-semibold">No employees yet</h2>
+
+            <p className="mt-1 text-sm text-muted-foreground">
+              Add an employee to start building your team.
+            </p>
+
+            <Link href="/merchant/add-employee" className="mt-5">
+              <Button>
+                <Plus size={16} className="mr-2" />
+                Add Employee
+              </Button>
+            </Link>
+          </CardContent>
+        </Card>
+      ) : (
+        <section className="mt-7 grid gap-5 xl:grid-cols-2">
+          {employees.map((employee) => (
+            <Card key={employee.id} className="shadow-sm">
+              <CardContent className="p-6">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex min-w-0 gap-4">
+                    <Avatar className="size-16 shrink-0">
+                      <AvatarFallback className="font-semibold">
+                        {getInitials(employee.name)}
+                      </AvatarFallback>
+                    </Avatar>
+
+                    <div className="min-w-0">
+                      <h2 className="font-bold">
+                        {employee.name}
+                      </h2>
+
+                      <p className="mt-1 break-all text-sm text-muted-foreground">
+                        {employee.email}
+                      </p>
+
+                      <div className="mt-2 flex items-start gap-1.5 text-sm text-muted-foreground">
+                        <MapPin
+                          size={14}
+                          className="mt-0.5 shrink-0 text-pink-500"
+                        />
+
+                        <span>{employee.task}</span>
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                <Badge
-                  variant="secondary"
-                  className={`gap-1.5 rounded-full ${getStatusClass(
-                    employee.statusColor,
-                  )}`}
-                >
-                  <span
-                    className={`size-1.5 rounded-full ${getDotClass(
+                  <Badge
+                    variant="secondary"
+                    className={`shrink-0 gap-1.5 rounded-full ${getStatusClass(
                       employee.statusColor,
                     )}`}
-                  />
-                  {employee.status}
-                </Badge>
-              </div>
-
-              <Separator className="my-6" />
-
-              <div className="grid grid-cols-2 gap-6">
-                <div>
-                  <p className="text-sm text-muted-foreground">
-                    Tasks completed
-                  </p>
-                  <p className="mt-1 font-bold">{employee.completed}</p>
-                </div>
-
-                <div>
-                  <p className="text-sm text-muted-foreground">Rating</p>
-                  <div className="mt-1 flex items-center gap-1.5">
-                    <Star
-                      size={16}
-                      className="fill-yellow-400 text-yellow-400"
+                  >
+                    <span
+                      className={`size-1.5 rounded-full ${getDotClass(
+                        employee.statusColor,
+                      )}`}
                     />
-                    <p className="font-bold">{employee.rating}</p>
-                  </div>
+
+                    {employee.status}
+                  </Badge>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </section>
+
+                <Separator className="my-6" />
+
+                <div className="flex items-end justify-between gap-4">
+                  <div>
+                    <p className="text-sm text-muted-foreground">
+                      Tasks completed
+                    </p>
+
+                    <p className="mt-1 font-bold">
+                      {employee.completed}
+                    </p>
+                  </div>
+
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="gap-2 border-red-500/30 text-red-600 hover:bg-red-500/10 hover:text-red-700"
+                    disabled={
+                      deletingEmployeeId === employee.id
+                    }
+                    onClick={() =>
+                      handleRemoveEmployee(employee)
+                    }
+                  >
+                    <Trash2 size={15} />
+
+                    {deletingEmployeeId === employee.id
+                      ? "Removing..."
+                      : "Remove"}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </section>
+      )}
     </main>
   );
 }

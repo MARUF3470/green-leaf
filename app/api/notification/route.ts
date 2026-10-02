@@ -7,33 +7,34 @@ export const dynamic = "force-dynamic";
 
 // GET /api/notification
 // GET /api/notification?unread=true   -> only unread
-export async function GET(request: Request) {
+export async function GET() {
   try {
     const session = await getServerSession(authOptions);
 
     if (!session?.user?.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return NextResponse.json(
+        { error: "Unauthorized" },
+        { status: 401 },
+      );
     }
 
-    const { searchParams } = new URL(request.url);
-    const unreadOnly = searchParams.get("unread") === "true";
-
-    const filter: Record<string, unknown> = { userId: session.user.id };
-    if (unreadOnly) {
-      filter.isRead = false;
-    }
-
-    const notifications = await db.orm.public.Notification.where(filter)
+    const notifications = await db.orm.public.Notification.where({
+      userId: session.user.id,
+    })
       .orderBy((notification) => notification.createdAt.desc())
       .all();
 
-    const unreadCount = unreadOnly
-      ? notifications.length
-      : notifications.filter((n: any) => !n.isRead).length;
+    const unreadCount = notifications.filter(
+      (notification) => !notification.isRead,
+    ).length;
 
-    return NextResponse.json({ notifications, unreadCount });
+    return NextResponse.json({
+      notifications,
+      unreadCount,
+    });
   } catch (error) {
     console.error("Failed to fetch notifications:", error);
+
     return NextResponse.json(
       { error: "Failed to fetch notifications" },
       { status: 500 },

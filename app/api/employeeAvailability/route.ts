@@ -3,8 +3,7 @@ import { getServerSession } from "next-auth";
 import { db } from "@/src/prisma/db";
 import { authOptions } from "@/lib/auth";
 import { createNotification } from "@/app/server/notification-helper";
-
-
+import { Temporal } from "temporal-polyfill";
 export const dynamic = "force-dynamic";
 
 // GET /api/employee/availability
@@ -22,8 +21,6 @@ export async function GET() {
   return NextResponse.json({ isAvailable: profile?.isAvailable ?? true });
 }
 
-// PATCH /api/employee/availability
-// Body: { isAvailable: boolean }
 export async function PATCH(request: Request) {
   const session = await getServerSession(authOptions);
 
@@ -40,6 +37,7 @@ export async function PATCH(request: Request) {
 
   const body = await request.json().catch(() => null);
   if (typeof body?.isAvailable !== "boolean") {
+    console.log( body?.isAvailable, ' body?.isAvailable')
     return NextResponse.json(
       { error: "isAvailable must be true or false" },
       { status: 400 }
@@ -48,11 +46,13 @@ export async function PATCH(request: Request) {
 
   try {
     await db.orm.public.EmployeeProfile
-      .where({ userId: session.user.id })
-      .update({
-        isAvailable: body.isAvailable,
-        availabilityUpdatedAt: new Date() as any,
-      });
+  .where({ userId: session.user.id })
+  .update({
+    isAvailable: body.isAvailable,
+    availabilityUpdatedAt: Temporal.Instant.fromEpochMilliseconds(
+      Date.now()
+    ),
+  });
 
     // Let the owner know when an employee goes unavailable, so they
     // don't assign a new task to someone who can't take it.

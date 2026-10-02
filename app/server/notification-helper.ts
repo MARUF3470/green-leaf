@@ -1,4 +1,6 @@
+// src/lib/notifications.ts
 "use server";
+
 import { db } from "@/src/prisma/db";
 
 type NotificationType =
@@ -15,25 +17,16 @@ type NotificationType =
 
 type CreateNotificationParams = {
   businessId: string;
-  userId: string; // recipient
+  userId: string;
   type: NotificationType;
   title: string;
   body?: string;
   taskId?: string;
 };
 
-// Call this from other routes whenever something notification-worthy happens
-// (task assigned, employee accepted/rejected, cancellation, instrument request, etc.)
-// Example:
-//   await createNotification({
-//     businessId,
-//     userId: assignment.employeeId,
-//     type: "TASK_ASSIGNED",
-//     title: "New task assigned",
-//     body: `You've been assigned to "${task.name}"`,
-//     taskId: task.id,
-//   });
-export async function createNotification(params: CreateNotificationParams) {
+export async function createNotification(
+  params: CreateNotificationParams,
+) {
   try {
     await db.orm.public.Notification.create({
       businessId: params.businessId,
@@ -44,15 +37,43 @@ export async function createNotification(params: CreateNotificationParams) {
       taskId: params.taskId ?? null,
       isRead: false,
     });
+
+    return true;
   } catch (error) {
-    // Notifications are a side effect — don't let a failure here
-    // break the primary action (e.g. task creation, assignment, etc.)
     console.error("Failed to create notification:", error);
+    return false;
   }
 }
 
-// Convenience helper for notifying every employee assigned to a task
-// (e.g. when a task is cancelled by the owner).
+/**
+ * Notify all owners of a business.
+ * Use this for employee actions that require the owner's attention.
+ */
+export async function notifyBusinessOwners(params: {
+  businessId: string;
+  type: NotificationType;
+  title: string;
+  body?: string;
+  taskId?: string;
+}) {
+  const owners = await db.orm.public.User.where({
+    businessId: params.businessId,
+    role: "OWNER",
+  }).all();
+
+  await Promise.all(
+    owners.map((owner) =>
+      createNotification({
+        ...params,
+        userId: owner.id,
+      }),
+    ),
+  );
+}
+
+/**
+ * Notify every employee assigned to a task.
+ */
 export async function notifyTaskAssignees(params: {
   businessId: string;
   taskId: string;
@@ -65,18 +86,27 @@ export async function notifyTaskAssignees(params: {
     taskId: params.taskId,
   }).all();
 
+  const recipients = [
+    ...new Set(
+      assignments
+        .filter(
+          (assignment) =>
+            assignment.employeeId !== params.excludeUserId,
+        )
+        .map((assignment) => assignment.employeeId),
+    ),
+  ];
+
   await Promise.all(
-    assignments
-      .filter((a: any) => a.employeeId !== params.excludeUserId)
-      .map((a: any) =>
-        createNotification({
-          businessId: params.businessId,
-          userId: a.employeeId,
-          type: params.type,
-          title: params.title,
-          body: params.body,
-          taskId: params.taskId,
-        }),
-      ),
+    recipients.map((userId) =>
+      createNotification({
+        businessId: params.businessId,
+        userId,
+        type: params.type,
+        title: params.title,
+        body: params.body,
+        taskId: params.taskId,
+      }),
+    ),
   );
 }

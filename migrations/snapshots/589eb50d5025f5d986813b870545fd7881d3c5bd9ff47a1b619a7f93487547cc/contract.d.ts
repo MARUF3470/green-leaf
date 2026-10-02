@@ -34,7 +34,7 @@ import type {
 } from '@prisma/orm-postgres/contract/types';
 
 export type StorageHash =
-  StorageHashBase<'c439fa1aacb654f67cbc18286cc2476f58b700455c8da71c30d11bf47f892b00'>;
+  StorageHashBase<'589eb50d5025f5d986813b870545fd7881d3c5bd9ff47a1b619a7f93487547cc'>;
 export type ExecutionHash =
   ExecutionHashBase<'6b3f2b55c986284dbd5e540b0720bcd72e761f6e01a3c247a079f076c9d55dae'>;
 export type ProfileHash =
@@ -398,8 +398,7 @@ export type FieldOutputTypes = {
       readonly payoutAmount: CodecTypes['pg/float8@1']['output'];
       readonly payoutStatus: 'UNPAID' | 'PAID';
       readonly respondedAt: CodecTypes['pg/timestamptz-temporal@1']['output'] | null;
-      readonly status:
-        'PENDING' | 'ACCEPTED' | 'REJECTED' | 'CANCELLED' | 'IN_PROGRESS' | 'COMPLETED';
+      readonly status: 'PENDING' | 'ACCEPTED' | 'REJECTED' | 'CANCELLED' | 'COMPLETED';
       readonly taskId: CodecTypes['pg/text@1']['output'];
       readonly updatedAt: CodecTypes['pg/timestamptz-temporal@1']['output'];
     };
@@ -577,8 +576,7 @@ export type FieldInputTypes = {
       readonly payoutAmount: CodecTypes['pg/float8@1']['input'];
       readonly payoutStatus: 'UNPAID' | 'PAID';
       readonly respondedAt: CodecTypes['pg/timestamptz-temporal@1']['input'] | null;
-      readonly status:
-        'PENDING' | 'ACCEPTED' | 'REJECTED' | 'CANCELLED' | 'IN_PROGRESS' | 'COMPLETED';
+      readonly status: 'PENDING' | 'ACCEPTED' | 'REJECTED' | 'CANCELLED' | 'COMPLETED';
       readonly taskId: CodecTypes['pg/text@1']['input'];
       readonly updatedAt: CodecTypes['pg/timestamptz-temporal@1']['input'];
     };
@@ -756,8 +754,7 @@ export type StorageColumnTypes = {
       readonly payoutAmount: CodecTypes['pg/float8@1']['output'];
       readonly payoutStatus: 'UNPAID' | 'PAID';
       readonly respondedAt: CodecTypes['pg/timestamptz-temporal@1']['output'] | null;
-      readonly status:
-        'PENDING' | 'ACCEPTED' | 'REJECTED' | 'CANCELLED' | 'IN_PROGRESS' | 'COMPLETED';
+      readonly status: 'PENDING' | 'ACCEPTED' | 'REJECTED' | 'CANCELLED' | 'COMPLETED';
       readonly taskId: CodecTypes['pg/text@1']['output'];
       readonly updatedAt: CodecTypes['pg/timestamptz-temporal@1']['output'];
     };
@@ -935,8 +932,7 @@ export type StorageColumnInputTypes = {
       readonly payoutAmount: CodecTypes['pg/float8@1']['input'];
       readonly payoutStatus: 'UNPAID' | 'PAID';
       readonly respondedAt: CodecTypes['pg/timestamptz-temporal@1']['input'] | null;
-      readonly status:
-        'PENDING' | 'ACCEPTED' | 'REJECTED' | 'CANCELLED' | 'IN_PROGRESS' | 'COMPLETED';
+      readonly status: 'PENDING' | 'ACCEPTED' | 'REJECTED' | 'CANCELLED' | 'COMPLETED';
       readonly taskId: CodecTypes['pg/text@1']['input'];
       readonly updatedAt: CodecTypes['pg/timestamptz-temporal@1']['input'];
     };
@@ -1163,7 +1159,7 @@ export namespace Models {
     payoutAmount: CodecTypes['pg/float8@1']['output'];
     payoutStatus: 'UNPAID' | 'PAID';
     respondedAt: CodecTypes['pg/timestamptz-temporal@1']['output'] | null;
-    status: 'PENDING' | 'ACCEPTED' | 'REJECTED' | 'CANCELLED' | 'IN_PROGRESS' | 'COMPLETED';
+    status: 'PENDING' | 'ACCEPTED' | 'REJECTED' | 'CANCELLED' | 'COMPLETED';
     taskId: CodecTypes['pg/text@1']['output'];
     updatedAt: CodecTypes['pg/timestamptz-temporal@1']['output'];
     employee: public_User;
@@ -2546,7 +2542,6 @@ type ContractBase = Omit<
                 'ACCEPTED',
                 'REJECTED',
                 'CANCELLED',
-                'IN_PROGRESS',
                 'COMPLETED',
               ];
             };
@@ -4041,7 +4036,6 @@ type ContractBase = Omit<
               { readonly name: 'ACCEPTED'; readonly value: 'ACCEPTED' },
               { readonly name: 'REJECTED'; readonly value: 'REJECTED' },
               { readonly name: 'CANCELLED'; readonly value: 'CANCELLED' },
-              { readonly name: 'IN_PROGRESS'; readonly value: 'IN_PROGRESS' },
               { readonly name: 'COMPLETED'; readonly value: 'COMPLETED' },
             ];
           };

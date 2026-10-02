@@ -102,6 +102,10 @@
                 "value": "CANCELLED"
               },
               {
+                "name": "IN_PROGRESS",
+                "value": "IN_PROGRESS"
+              },
+              {
                 "name": "COMPLETED",
                 "value": "COMPLETED"
               }
@@ -3295,6 +3299,15 @@
               "indexes": [
                 {
                   "columns": [
+                    "businessId",
+                    "createdAt"
+                  ],
+                  "name": "Notification_businessId_createdAt_idx_776e65e5",
+                  "prefix": "Notification_businessId_createdAt_idx",
+                  "unique": false
+                },
+                {
+                  "columns": [
                     "businessId"
                   ],
                   "name": "Notification_businessId_idx_ae0ed511",
@@ -3827,8 +3840,8 @@
                   "prefix": "TaskAssignment_payoutStatus_check"
                 },
                 {
-                  "expression": "\"status\" IN ('PENDING', 'ACCEPTED', 'REJECTED', 'CANCELLED', 'COMPLETED')",
-                  "name": "TaskAssignment_status_check_fcf883e8",
+                  "expression": "\"status\" IN ('PENDING', 'ACCEPTED', 'REJECTED', 'CANCELLED', 'IN_PROGRESS', 'COMPLETED')",
+                  "name": "TaskAssignment_status_check_5b125162",
                   "prefix": "TaskAssignment_status_check"
                 }
               ],
@@ -4215,6 +4228,7 @@
                 "ACCEPTED",
                 "REJECTED",
                 "CANCELLED",
+                "IN_PROGRESS",
                 "COMPLETED"
               ]
             },
@@ -4287,7 +4301,7 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "e125440970e426975a676bd167f757ec821751fd7acb24339ac909ec58d99cef"
+    "storageHash": "c439fa1aacb654f67cbc18286cc2476f58b700455c8da71c30d11bf47f892b00"
   },
   "execution": {
     "executionHash": "6b3f2b55c986284dbd5e540b0720bcd72e761f6e01a3c247a079f076c9d55dae",

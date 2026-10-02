@@ -30,22 +30,10 @@ const EmployeeSideBar = () => {
         <h1>Employee Name</h1>
         <SidebarMenu>
           <SidebarMenuItem>
-            {/* <DropdownMenu>
-              <DropdownMenuTrigger render={<SidebarMenuButton />}>
-                Select Workspace
-                <ChevronDown className="ml-auto" />
-              </DropdownMenuTrigger>
-              <DropdownMenuContent>
-                <DropdownMenuItem>
-                  <span>Acme Inc</span>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu> */}
-
             <SidebarMenuButton>
               <Link
                 className="flex justify-center items-center gap-1"
-                href="/employee/mytasks"
+                href="/employee"
               >
                 <Check /> My Task
               </Link>
@@ -61,7 +49,7 @@ const EmployeeSideBar = () => {
             <SidebarMenuButton>
               <Link
                 className="flex justify-center items-center gap-1"
-                href="/employee"
+                href="/employee/profile"
               >
                 <IdCardLanyard /> My Profile
               </Link>
