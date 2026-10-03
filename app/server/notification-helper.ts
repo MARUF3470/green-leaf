@@ -22,6 +22,7 @@ type CreateNotificationParams = {
   title: string;
   body?: string;
   taskId?: string;
+  instrumentId?: string;
 };
 
 export async function createNotification(
@@ -36,6 +37,7 @@ export async function createNotification(
       body: params.body ?? null,
       taskId: params.taskId ?? null,
       isRead: false,
+      instrumentId: params.instrumentId ?? null,
     });
 
     return true;

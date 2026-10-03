@@ -73,7 +73,7 @@ export async function GET() {
     }
 
     const businessId = session.user.businessId;
-
+console.log(session)
     if (!businessId) {
       return NextResponse.json(
         { message: "No business is associated with this account" },

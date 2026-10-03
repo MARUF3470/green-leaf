@@ -36,6 +36,7 @@ type Notification = {
   taskId: string | null;
   isRead: boolean;
   createdAt: string;
+  instrumentId: string | null;
 };
 
 type NotificationResponse = {
@@ -134,6 +135,76 @@ export default function MerchantNotificationsPage() {
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [markingAll, setMarkingAll] = useState(false);
 
+  const handleInstrumentDecision = async (
+    notification: Notification,
+    action: "APPROVE" | "REJECT"
+  ) => {
+    if (!notification.instrumentId) {
+      console.log(notification, 'notifications')
+      setError("Equipment request ID is missing.");
+      return;
+    }
+
+    try {
+      setUpdatingId(notification.id);
+      setError("");
+
+      const response = await fetch(
+        `/api/merchant/instruments/${notification.instrumentId}`,
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ action }),
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          data.message ??
+          data.error ??
+          "Failed to update equipment request"
+        );
+      }
+
+      /*
+       * Change notification locally so the buttons disappear
+       */
+      setNotifications((current) =>
+        current.map((item) =>
+          item.id === notification.id
+            ? {
+              ...item,
+              title:
+                action === "APPROVE"
+                  ? "Equipment request approved"
+                  : "Equipment request declined",
+              isRead: true,
+            }
+            : item
+        )
+      );
+
+      /*
+       * Update unread count if it was unread
+       */
+      if (!notification.isRead) {
+        setUnreadCount((count) => Math.max(0, count - 1));
+      }
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Failed to update equipment request"
+      );
+    } finally {
+      setUpdatingId(null);
+    }
+  };
+
   const fetchNotifications = useCallback(async () => {
     try {
       setLoading(true);
@@ -148,7 +219,7 @@ export default function MerchantNotificationsPage() {
       if (!response.ok) {
         throw new Error(
           (data as { error?: string }).error ??
-            "Failed to fetch notifications",
+          "Failed to fetch notifications",
         );
       }
 
@@ -315,11 +386,10 @@ export default function MerchantNotificationsPage() {
               return (
                 <div
                   key={notification.id}
-                  className={`flex items-center gap-4 border-b border-border px-5 py-5 last:border-b-0 sm:px-7 ${
-                    !notification.isRead
+                  className={`flex items-center gap-4 border-b border-border px-5 py-5 last:border-b-0 sm:px-7 ${!notification.isRead
                       ? "bg-blue-500/[0.035]"
                       : ""
-                  }`}
+                    }`}
                 >
                   <div
                     className={`grid size-9 shrink-0 place-items-center rounded-lg ${className}`}
@@ -329,11 +399,10 @@ export default function MerchantNotificationsPage() {
 
                   <div className="min-w-0 flex-1">
                     <p
-                      className={`text-sm leading-6 sm:text-base ${
-                        notification.isRead
+                      className={`text-sm leading-6 sm:text-base ${notification.isRead
                           ? "font-normal text-foreground"
                           : "font-semibold text-foreground"
-                      }`}
+                        }`}
                     >
                       {notification.title}
                     </p>
@@ -363,6 +432,41 @@ export default function MerchantNotificationsPage() {
                     </Button>
                   )}
 
+                  {notification.type === "INSTRUMENT_REQUEST" &&
+                    !notification.isRead && (
+                      <div className="flex shrink-0 items-center gap-2">
+                        <Button
+                          size="sm"
+                          disabled={updatingId === notification.id}
+                          onClick={() =>
+                            handleInstrumentDecision(
+                              notification,
+                              "APPROVE"
+                            )
+                          }
+                          className="bg-emerald-600 text-white hover:bg-emerald-700"
+                        >
+                          {updatingId === notification.id
+                            ? "Updating..."
+                            : "Accept"}
+                        </Button>
+
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          disabled={updatingId === notification.id}
+                          onClick={() =>
+                            handleInstrumentDecision(
+                              notification,
+                              "REJECT"
+                            )
+                          }
+                          className="border-rose-300 text-rose-600 hover:bg-rose-50 hover:text-rose-700"
+                        >
+                          Decline
+                        </Button>
+                      </div>
+                    )}
                   {!notification.isRead && (
                     <Circle
                       size={9}

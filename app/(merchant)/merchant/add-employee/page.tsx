@@ -32,14 +32,26 @@ const employeeSchema = z.object({
     .string()
     .min(3, "name must be at least 3 characters")
     .regex(/^[a-zA-Z0-9_.-]+$/, "Only letters, numbers, _ . - allowed"),
-  email: z.string().email("Invalid email address").optional().or(z.literal("")),
+
+  email: z
+    .string()
+    .email("Invalid email address")
+    .optional()
+    .or(z.literal("")),
+
   phone: z.string().optional(),
+
   address: z.string().optional(),
+
   password: z
     .string()
     .min(8, "Temporary password must be at least 8 characters"),
+
   role: z.literal("EMPLOYEE"),
+
   whoAdded: z.string().min(1, "Owner ID is required"),
+
+  businessId: z.string().min(1, "Business ID is required"),
 });
 
 export default function AddEmployeeForm() {
@@ -55,7 +67,6 @@ export default function AddEmployeeForm() {
   const [isLoading, setIsLoading] = useState(false);
 
   const generatePassword = () => {
-    // Simple readable temp password generator — employee will reset it on first login
     const random = Math.random().toString(36).slice(-8);
     setPassword(random);
   };
@@ -70,6 +81,7 @@ export default function AddEmployeeForm() {
       password,
       role: "EMPLOYEE",
       whoAdded: session?.user?.id,
+      businessId: session?.user?.businessId,
     });
 
     if (!result.success) {
@@ -85,8 +97,6 @@ export default function AddEmployeeForm() {
 
     setIsLoading(true);
     try {
-      // No businessId or role sent — the API route derives the owner's
-      // business from the server session and forces role to EMPLOYEE.
       const res = await fetch("/api/user", {
         method: "POST",
         headers: { "Content-Type": "application/json" },

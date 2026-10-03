@@ -56,6 +56,7 @@ enum NotificationType {
   AVAILABILITY_CHANGED
   PAYMENT_SENT
   SUBSCRIPTION
+  TASK_STARTED
 }
 
 enum SubscriptionStatus {
@@ -281,18 +282,19 @@ model Payment {
 
 // ───────────────────────── NOTIFICATIONS ─────────────────────────
 model Notification {
-  id         String           @id @default(uuid())
-  businessId String
-  userId     String
-  type       NotificationType
-  title      String
-  body       String?
-  taskId     String?
-  isRead     Boolean          @default(false)
-  createdAt  DateTime         @default(now())
+  id           String           @id @default(uuid())
+  businessId   String
+  userId       String
+  type         NotificationType
+  title        String
+  body         String?
+  taskId       String?
+  instrumentId String?
+  isRead       Boolean          @default(false)
+  createdAt    DateTime         @default(now())
 
-  business   Business         @relation(fields: [businessId], references: [id], onDelete: Cascade)
-  user       User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  business     Business         @relation(fields:[businessId], references:[id], onDelete: Cascade)
+  user         User             @relation(fields:[userId], references:[id], onDelete: Cascade)
 
   @@index([userId, isRead, createdAt])
   @@index([businessId, createdAt])

@@ -179,6 +179,10 @@
               {
                 "name": "SUBSCRIPTION",
                 "value": "SUBSCRIPTION"
+              },
+              {
+                "name": "TASK_STARTED",
+                "value": "TASK_STARTED"
               }
             ]
           },
@@ -1230,6 +1234,13 @@
                   "kind": "scalar"
                 }
               },
+              "instrumentId": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
               "isRead": {
                 "nullable": false,
                 "type": {
@@ -1319,6 +1330,9 @@
                 },
                 "id": {
                   "column": "id"
+                },
+                "instrumentId": {
+                  "column": "instrumentId"
                 },
                 "isRead": {
                   "column": "isRead"
@@ -3194,8 +3208,8 @@
             "Notification": {
               "checks": [
                 {
-                  "expression": "\"type\" IN ('TASK_ASSIGNED', 'TASK_ACCEPTED', 'TASK_REJECTED', 'TASK_CANCELLED', 'TASK_COMPLETED', 'INSTRUMENT_REQUEST', 'INSTRUMENT_DECISION', 'AVAILABILITY_CHANGED', 'PAYMENT_SENT', 'SUBSCRIPTION')",
-                  "name": "Notification_type_check_5c111c2f",
+                  "expression": "\"type\" IN ('TASK_ASSIGNED', 'TASK_ACCEPTED', 'TASK_REJECTED', 'TASK_CANCELLED', 'TASK_COMPLETED', 'INSTRUMENT_REQUEST', 'INSTRUMENT_DECISION', 'AVAILABILITY_CHANGED', 'PAYMENT_SENT', 'SUBSCRIPTION', 'TASK_STARTED')",
+                  "name": "Notification_type_check_081d8e33",
                   "prefix": "Notification_type_check"
                 }
               ],
@@ -3223,6 +3237,11 @@
                   "codecId": "pg/text@1",
                   "nativeType": "text",
                   "nullable": false
+                },
+                "instrumentId": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true
                 },
                 "isRead": {
                   "codecId": "pg/bool@1",
@@ -4258,7 +4277,8 @@
                 "INSTRUMENT_DECISION",
                 "AVAILABILITY_CHANGED",
                 "PAYMENT_SENT",
-                "SUBSCRIPTION"
+                "SUBSCRIPTION",
+                "TASK_STARTED"
               ]
             },
             "PayoutStatus": {
@@ -4301,7 +4321,7 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "c439fa1aacb654f67cbc18286cc2476f58b700455c8da71c30d11bf47f892b00"
+    "storageHash": "23d0b49e7dd25cb7e6eda4b783bda3e008d6c111a7bf127e0372f02f025e6b98"
   },
   "execution": {
     "executionHash": "6b3f2b55c986284dbd5e540b0720bcd72e761f6e01a3c247a079f076c9d55dae",

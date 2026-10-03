@@ -6,7 +6,7 @@ import { createNotification } from "@/app/server/notification-helper";
 import { Temporal } from "temporal-polyfill";
 export const dynamic = "force-dynamic";
 
-// GET /api/employee/availability
+
 export async function GET() {
   const session = await getServerSession(authOptions);
 

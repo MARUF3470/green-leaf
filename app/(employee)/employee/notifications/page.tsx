@@ -59,6 +59,7 @@ export default function EmployeeNotificationsPage() {
   const [jobs, setJobs] = useState<Job[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [instrumentPrice, setInstrumentPrice] = useState("");
   const [submitting, setSubmitting] = useState<string | null>(null);
 
   const [selectedTask, setSelectedTask] = useState<string | null>("");
@@ -148,6 +149,7 @@ export default function EmployeeNotificationsPage() {
             taskId: selectedTask,
             name: instrumentName,
             quantity: Number(quantity),
+            price: Number(instrumentPrice),
           }),
         }
       );
@@ -444,6 +446,19 @@ export default function EmployeeNotificationsPage() {
                 min={1}
                 value={quantity}
                 onChange={(event) => setQuantity(event.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Amount</Label>
+              <Input
+                type="number"
+                min="0"
+                step="0.01"
+                value={instrumentPrice}
+                onChange={(event) =>
+                  setInstrumentPrice(event.target.value)
+                }
+                placeholder="e.g. 150.00"
               />
             </div>
           </div>
